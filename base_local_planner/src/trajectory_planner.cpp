@@ -189,7 +189,7 @@ namespace base_local_planner{
 
   TrajectoryPlanner::~TrajectoryPlanner(){}
 
-  bool TrajectoryPlanner::getCellCosts(int cx, int cy, float &path_cost, float &goal_cost, float &occ_cost, float &total_cost) {
+  bool TrajectoryPlanner::getCellCosts(int cx, int cy, float &path_cost, float &alignment_cost, float &goal_cost, float &occ_cost, float &total_cost) {
     MapCell cell = path_map_(cx, cy);
     MapCell goal_cell = goal_map_(cx, cy);
     if (cell.within_robot) {
@@ -202,6 +202,7 @@ namespace base_local_planner{
         return false;
     }
     path_cost = cell.target_dist;
+    alignment_cost = 0.0; // not applicable in TrajectoryPlannerROS
     goal_cost = goal_cell.target_dist;
     total_cost = pdist_scale_ * path_cost + gdist_scale_ * goal_cost + occdist_scale_ * occ_cost;
     return true;

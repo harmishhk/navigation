@@ -135,7 +135,7 @@ namespace dwa_local_planner {
        * @param total_cost Will be set to the value of the overall cost function, taking into account the scaling parameters
        * @return True if the cell is traversible and therefore a legal location for the robot to move to
        */
-      bool getCellCosts(int cx, int cy, float &path_cost, float &goal_cost, float &occ_cost, float &total_cost);
+      bool getCellCosts(int cx, int cy, float &path_cost, float &alignment_cost, float &goal_cost, float &occ_cost, float &total_cost);
 
       /**
        * sets new plan and resets state

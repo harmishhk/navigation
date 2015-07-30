@@ -42,6 +42,7 @@ namespace base_local_planner {
         float y;
         float z;
         float path_cost;
+        float alignment_cost;
         float goal_cost;
         float occ_cost;
         float total_cost;
@@ -54,6 +55,7 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(
         (float, y, y)
         (float, z, z)
         (float, path_cost, path_cost)
+        (float, alignment_cost, alignment_cost)
         (float, goal_cost, goal_cost)
         (float, occ_cost, occ_cost)
         (float, total_cost, total_cost));

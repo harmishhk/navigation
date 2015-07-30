@@ -41,7 +41,7 @@ namespace base_local_planner {
   MapGridVisualizer::MapGridVisualizer() {}
 
 
-  void MapGridVisualizer::initialize(const std::string& name, std::string frame_id, boost::function<bool (int cx, int cy, float &path_cost, float &goal_cost, float &occ_cost, float &total_cost)> cost_function) {
+  void MapGridVisualizer::initialize(const std::string& name, std::string frame_id, boost::function<bool (int cx, int cy, float &path_cost, float &alignment_cost, float &goal_cost, float &occ_cost, float &total_cost)> cost_function) {
     name_ = name;
     cost_function_ = cost_function;
 
@@ -62,15 +62,16 @@ namespace base_local_planner {
     std_msgs::Header header = pcl_conversions::fromPCL(cost_cloud_->header);
     header.stamp = ros::Time::now();
     cost_cloud_->header = pcl_conversions::toPCL(header);
-    float path_cost, goal_cost, occ_cost, total_cost;
+    float path_cost, alignment_cost, goal_cost, occ_cost, total_cost;
     for (unsigned int cx = 0; cx < x_size; cx++) {
       for (unsigned int cy = 0; cy < y_size; cy++) {
         costmap_p_->mapToWorld(cx, cy, x_coord, y_coord);
-        if (cost_function_(cx, cy, path_cost, goal_cost, occ_cost, total_cost)) {
+        if (cost_function_(cx, cy, path_cost, alignment_cost, goal_cost, occ_cost, total_cost)) {
           pt.x = x_coord;
           pt.y = y_coord;
           pt.z = z_coord;
           pt.path_cost = path_cost;
+          pt.alignment_cost = alignment_cost;
           pt.goal_cost = goal_cost;
           pt.occ_cost = occ_cost;
           pt.total_cost = total_cost;
