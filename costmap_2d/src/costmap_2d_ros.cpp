@@ -71,26 +71,30 @@ Costmap2DROS::Costmap2DROS(std::string name, tf::TransformListener& tf) :
   ros::NodeHandle prefix_nh;
   std::string tf_prefix = tf::getPrefixParam(prefix_nh);
 
-  // get two frames
+  // get frames
   private_nh.param("global_frame", global_frame_, std::string("/map"));
   private_nh.param("robot_base_frame", robot_base_frame_, std::string("base_link"));
+  private_nh.param("origin_frame", origin_frame_, std::string("base_link"));
 
   // make sure that we set the frames appropriately based on the tf_prefix
   global_frame_ = tf::resolve(tf_prefix, global_frame_);
   robot_base_frame_ = tf::resolve(tf_prefix, robot_base_frame_);
+  origin_frame_ = tf::resolve(tf_prefix, origin_frame_);
 
   ros::Time last_error = ros::Time::now();
   std::string tf_error;
   // we need to make sure that the transform between the robot base frame and the global frame is available
   while (ros::ok()
       && !tf_.waitForTransform(global_frame_, robot_base_frame_, ros::Time(), ros::Duration(0.1), ros::Duration(0.01),
+                               &tf_error)
+      && !tf_.waitForTransform(global_frame_, origin_frame_, ros::Time(), ros::Duration(0.1), ros::Duration(0.01),
                                &tf_error))
   {
     ros::spinOnce();
     if (last_error + ros::Duration(5.0) < ros::Time::now())
     {
-      ROS_WARN("Timed out waiting for transform from %s to %s to become available before running costmap, tf error: %s",
-               robot_base_frame_.c_str(), global_frame_.c_str(), tf_error.c_str());
+      ROS_WARN("Timed out waiting on transform from %s (robot frame) and %s (orgin frame) to %s to become available before running costmap, tf error: %s",
+               robot_base_frame_.c_str(), origin_frame_.c_str(), global_frame_.c_str(), tf_error.c_str());
       last_error = ros::Time::now();
     }
     // The error string will accumulate and errors will typically be the same, so the last
@@ -416,19 +420,17 @@ void Costmap2DROS::updateMap()
   if (!stop_updates_)
   {
     // get global pose
-    tf::Stamped < tf::Pose > pose;
-    if (getRobotPose (pose))
+    tf::Stamped < tf::Pose > origin_pose, robot_pose;
+    if (getOriginPose (origin_pose) && getRobotPose (robot_pose))
     {
-      double x = pose.getOrigin().x(),
-             y = pose.getOrigin().y(),
-             yaw = tf::getYaw(pose.getRotation());
-
-      layered_costmap_->updateMap(x, y, yaw);
+      layered_costmap_->updateMap(origin_pose.getOrigin().x(),
+        origin_pose.getOrigin().y(), tf::getYaw(origin_pose.getRotation()));
 
       geometry_msgs::PolygonStamped footprint;
       footprint.header.frame_id = global_frame_;
       footprint.header.stamp = ros::Time::now();
-      transformFootprint(x, y, yaw, padded_footprint_, footprint);
+      transformFootprint(robot_pose.getOrigin().x(), robot_pose.getOrigin().y(),
+        tf::getYaw(robot_pose.getRotation()), padded_footprint_, footprint);
       footprint_pub_.publish(footprint);
 
       initialized_ = true;
@@ -503,39 +505,48 @@ void Costmap2DROS::resetLayers()
 
 bool Costmap2DROS::getRobotPose(tf::Stamped<tf::Pose>& global_pose) const
 {
-  global_pose.setIdentity();
-  tf::Stamped < tf::Pose > robot_pose;
-  robot_pose.setIdentity();
-  robot_pose.frame_id_ = robot_base_frame_;
-  robot_pose.stamp_ = ros::Time();
+  return getPose(global_pose, robot_base_frame_);
+}
+
+bool Costmap2DROS::getOriginPose(tf::Stamped<tf::Pose>& origin_pose) const
+{
+  return getPose(origin_pose, origin_frame_);
+}
+
+bool Costmap2DROS::getPose(tf::Stamped<tf::Pose>& pose, std::string frame) const
+{
+  pose.setIdentity();
+  tf::Stamped < tf::Pose > tf_pose;
+  tf_pose.setIdentity();
+  tf_pose.frame_id_ = frame;
+  tf_pose.stamp_ = ros::Time();
   ros::Time current_time = ros::Time::now();  // save time for checking tf delay later
 
-  // get the global pose of the robot
   try
   {
-    tf_.transformPose(global_frame_, robot_pose, global_pose);
+    tf_.transformPose(global_frame_, tf_pose, pose);
   }
   catch (tf::LookupException& ex)
   {
-    ROS_ERROR_THROTTLE(1.0, "No Transform available Error looking up robot pose: %s\n", ex.what());
+    ROS_ERROR_THROTTLE(1.0, "No Transform available Error looking up %s pose: %s\n", frame.c_str(), ex.what());
     return false;
   }
   catch (tf::ConnectivityException& ex)
   {
-    ROS_ERROR_THROTTLE(1.0, "Connectivity Error looking up robot pose: %s\n", ex.what());
+    ROS_ERROR_THROTTLE(1.0, "Connectivity Error looking up %s pose: %s\n", frame.c_str(), ex.what());
     return false;
   }
   catch (tf::ExtrapolationException& ex)
   {
-    ROS_ERROR_THROTTLE(1.0, "Extrapolation Error looking up robot pose: %s\n", ex.what());
+    ROS_ERROR_THROTTLE(1.0, "Extrapolation Error looking up %s pose: %s\n", frame.c_str(), ex.what());
     return false;
   }
-  // check global_pose timeout
-  if (current_time.toSec() - global_pose.stamp_.toSec() > transform_tolerance_)
+  // check pose timeout
+  if (current_time.toSec() - pose.stamp_.toSec() > transform_tolerance_)
   {
     ROS_WARN_THROTTLE(1.0,
-                      "Costmap2DROS transform timeout. Current time: %.4f, global_pose stamp: %.4f, tolerance: %.4f",
-                      current_time.toSec(), global_pose.stamp_.toSec(), transform_tolerance_);
+                      "Costmap2DROS transform timeout. Current time: %.4f, pose stamp: %.4f, tolerance: %.4f",
+                      current_time.toSec(), pose.stamp_.toSec(), transform_tolerance_);
     return false;
   }
 
