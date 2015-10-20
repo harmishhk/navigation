@@ -383,8 +383,8 @@ void Costmap2DROS::mapUpdateLoop(double frequency)
   ros::Rate r(frequency);
   while (nh.ok() && !map_update_thread_shutdown_)
   {
-    struct timeval start, end;
-    double start_t, end_t, t_diff;
+    struct timeval start, start_publish, end;
+    double start_t, start_publish_t, end_t, t_diff;
     gettimeofday(&start, NULL);
 
     updateMap();
@@ -393,7 +393,9 @@ void Costmap2DROS::mapUpdateLoop(double frequency)
     start_t = start.tv_sec + double(start.tv_usec) / 1e6;
     end_t = end.tv_sec + double(end.tv_usec) / 1e6;
     t_diff = end_t - start_t;
-    ROS_DEBUG("Map update time: %.9f", t_diff);
+    ROS_DEBUG("%s update time: %.9f", name_.c_str(), t_diff);
+
+    gettimeofday(&start_publish, NULL);
     if (publish_cycle.toSec() > 0 && layered_costmap_->isInitialized())
     {
       unsigned int x0, y0, xn, yn;
@@ -407,6 +409,14 @@ void Costmap2DROS::mapUpdateLoop(double frequency)
         last_publish_ = now;
       }
     }
+    gettimeofday(&end, NULL);
+    start_publish_t = start_publish.tv_sec + double(start_publish.tv_usec) / 1e6;
+    end_t = end.tv_sec + double(end.tv_usec) / 1e6;
+    t_diff = end_t - start_publish_t;
+    ROS_DEBUG("%s publish time: %.9f", name_.c_str(), t_diff);
+    t_diff = end_t - start_t;
+    ROS_DEBUG("total %s update and publish time: %.9f", name_.c_str(), t_diff);
+
     r.sleep();
     // make sure to sleep for the remainder of our cycle time
     if (r.cycleTime() > ros::Duration(1 / frequency))

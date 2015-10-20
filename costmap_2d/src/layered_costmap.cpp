@@ -92,11 +92,19 @@ void LayeredCostmap::updateMap(double robot_x, double robot_y, double robot_yaw)
   minx_ = miny_ = 1e30;
   maxx_ = maxy_ = -1e30;
 
+  // struct timeval start, end;
+  // double start_t, end_t, t_diff;
+  // gettimeofday(&start, NULL);
   for (vector<boost::shared_ptr<Layer> >::iterator plugin = plugins_.begin(); plugin != plugins_.end();
       ++plugin)
   {
     (*plugin)->updateBounds(robot_x, robot_y, robot_yaw, &minx_, &miny_, &maxx_, &maxy_);
   }
+  // gettimeofday(&end, NULL);
+  // start_t = start.tv_sec + double(start.tv_usec) / 1e6;
+  // end_t = end.tv_sec + double(end.tv_usec) / 1e6;
+  // t_diff = end_t - start_t;
+  // ROS_DEBUG("update bound cycle time: %.9f", t_diff);
 
   int x0, xn, y0, yn;
   costmap_.worldToMapEnforceBounds(minx_, miny_, x0, y0);
@@ -116,11 +124,17 @@ void LayeredCostmap::updateMap(double robot_x, double robot_y, double robot_yaw)
     // Clear and update costmap under a single lock
     boost::unique_lock<Costmap2D::mutex_t> lock(*(costmap_.getMutex()));
     costmap_.resetMap(x0, y0, xn, yn);
+    // gettimeofday(&start, NULL);
     for (vector<boost::shared_ptr<Layer> >::iterator plugin = plugins_.begin(); plugin != plugins_.end();
         ++plugin)
     {
       (*plugin)->updateCosts(costmap_, x0, y0, xn, yn);
     }
+    // gettimeofday(&end, NULL);
+    // start_t = start.tv_sec + double(start.tv_usec) / 1e6;
+    // end_t = end.tv_sec + double(end.tv_usec) / 1e6;
+    // t_diff = end_t - start_t;
+    // ROS_DEBUG("update costs cycle time: %.9f", t_diff);
   }
 
   bx0_ = x0;
