@@ -679,6 +679,9 @@ namespace move_base {
 
   void MoveBase::executeCb(const move_base_msgs::MoveBaseGoalConstPtr& move_base_goal)
   {
+    // struct timeval start_e, start_a, end_f;
+    // double start_e_t, start_a_t, end_f_t, se_diff;
+
     if(!isQuaternionValid(move_base_goal->target_pose.pose.orientation)){
       as_->setAborted(move_base_msgs::MoveBaseResult(), "Aborting on goal because it was sent with an invalid quaternion");
       return;
@@ -711,6 +714,8 @@ namespace move_base {
     ros::NodeHandle n;
     while(n.ok())
     {
+    //   gettimeofday(&start_a, NULL);
+
       if(c_freq_change_)
       {
         ROS_INFO("Setting controller frequency to %.2f", controller_frequency_);
@@ -788,6 +793,13 @@ namespace move_base {
         last_oscillation_reset_ = ros::Time::now();
       }
 
+    //   gettimeofday(&end_f, NULL);
+    //   start_a_t = start_a.tv_sec + double(start_a.tv_usec) / 1e6;
+    //   end_f_t = end_f.tv_sec + double(end_f.tv_usec) / 1e6;
+    //   se_diff = end_f_t - start_a_t;
+    //   ROS_INFO("other stuff in execute time: %.9f", se_diff);
+    //   gettimeofday(&start_e, NULL);
+
       //for timing that gives real time even in simulation
       ros::WallTime start = ros::WallTime::now();
 
@@ -804,6 +816,13 @@ namespace move_base {
       ROS_DEBUG_NAMED("move_base","Full control cycle time: %.9f\n", t_diff.toSec());
 
       r.sleep();
+
+    //   gettimeofday(&end_f, NULL);
+    //   start_e_t = start_e.tv_sec + double(start_e.tv_usec) / 1e6;
+    //   end_f_t = end_f.tv_sec + double(end_f.tv_usec) / 1e6;
+    //   se_diff = end_f_t - start_e_t;
+    //   ROS_INFO("execute cycle time: %.9f", se_diff);
+
       //make sure to sleep for the remainder of our cycle time
       if(r.cycleTime() > ros::Duration(1 / controller_frequency_) && state_ == CONTROLLING)
         ROS_WARN("Control loop missed its desired rate of %.4fHz... the loop actually took %.4f seconds", controller_frequency_, r.cycleTime().toSec());
@@ -908,6 +927,11 @@ namespace move_base {
 
       //if we're controlling, we'll attempt to find valid velocity commands
       case CONTROLLING:
+        // struct timeval start_e, start_a, end_f;
+        // double start_e_t, start_a_t, end_f_t, se_diff;
+        // gettimeofday(&start_e, NULL);
+        // start_e_t = start_e.tv_sec + double(start_e.tv_usec) / 1e6;
+
         ROS_DEBUG_NAMED("move_base","In controlling state.");
 
         //check to see if we've reached our goal
@@ -924,6 +948,11 @@ namespace move_base {
           return true;
         }
 
+        // gettimeofday(&end_f, NULL);
+        // end_f_t = end_f.tv_sec + double(end_f.tv_usec) / 1e6;
+        // se_diff = end_f_t - start_e_t;
+        // ROS_INFO("executeCycle: isGoalReached time: %.9f", se_diff);
+
         //check for an oscillation condition
         if(oscillation_timeout_ > 0.0 &&
             last_oscillation_reset_ + ros::Duration(oscillation_timeout_) < ros::Time::now())
@@ -932,10 +961,13 @@ namespace move_base {
           state_ = CLEARING;
           recovery_trigger_ = OSCILLATION_R;
         }
-        
+
+        // gettimeofday(&start_a, NULL);
+        // start_a_t = start_a.tv_sec + double(start_a.tv_usec) / 1e6;
+
         {
          boost::unique_lock<costmap_2d::Costmap2D::mutex_t> lock(*(controller_costmap_ros_->getCostmap()->getMutex()));
-        
+
         if(tc_->computeVelocityCommands(cmd_vel)){
           ROS_DEBUG_NAMED( "move_base", "Got a valid command from the local planner: %.3lf, %.3lf, %.3lf",
                            cmd_vel.linear.x, cmd_vel.linear.y, cmd_vel.angular.z );
@@ -970,6 +1002,13 @@ namespace move_base {
           }
         }
         }
+
+        // gettimeofday(&end_f, NULL);
+        // end_f_t = end_f.tv_sec + double(end_f.tv_usec) / 1e6;
+        // se_diff = end_f_t - start_a_t;
+        // ROS_INFO("executeCycle: controlling compute time: %.9f", se_diff);
+        // se_diff = end_f_t - start_e_t;
+        // ROS_INFO("executeCycle: full controlling time: %.9f", se_diff);
 
         break;
 

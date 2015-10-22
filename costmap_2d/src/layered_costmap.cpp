@@ -76,8 +76,12 @@ void LayeredCostmap::resizeMap(unsigned int size_x, unsigned int size_y, double 
   }
 }
 
-void LayeredCostmap::updateMap(double robot_x, double robot_y, double robot_yaw)
+void LayeredCostmap::updateMap(double robot_x, double robot_y, double robot_yaw, std::string name)
 {
+  // struct timeval start, start_e, end;
+  // double start_t, end_t, t_diff;
+  // gettimeofday(&start, NULL);
+
   // if we're using a rolling buffer costmap... we need to update the origin using the robot's position
   if (rolling_window_)
   {
@@ -86,29 +90,36 @@ void LayeredCostmap::updateMap(double robot_x, double robot_y, double robot_yaw)
     costmap_.updateOrigin(new_origin_x, new_origin_y);
   }
 
+  // gettimeofday(&end, NULL);
+  // start_t = start.tv_sec + double(start.tv_usec) / 1e6;
+  // end_t = end.tv_sec + double(end.tv_usec) / 1e6;
+  // t_diff = end_t - start_t;
+  // ROS_INFO("%s-layers: update origin time: %.9f", name.c_str(), t_diff);
+
   if (plugins_.size() == 0)
     return;
 
   minx_ = miny_ = 1e30;
   maxx_ = maxy_ = -1e30;
 
-  // struct timeval start, end;
-  // double start_t, end_t, t_diff;
-  // gettimeofday(&start, NULL);
+  // gettimeofday(&start_e, NULL);
+
   for (vector<boost::shared_ptr<Layer> >::iterator plugin = plugins_.begin(); plugin != plugins_.end();
       ++plugin)
   {
     (*plugin)->updateBounds(robot_x, robot_y, robot_yaw, &minx_, &miny_, &maxx_, &maxy_);
   }
-  // gettimeofday(&end, NULL);
-  // start_t = start.tv_sec + double(start.tv_usec) / 1e6;
-  // end_t = end.tv_sec + double(end.tv_usec) / 1e6;
-  // t_diff = end_t - start_t;
-  // ROS_DEBUG("update bound cycle time: %.9f", t_diff);
 
   int x0, xn, y0, yn;
   costmap_.worldToMapEnforceBounds(minx_, miny_, x0, y0);
   costmap_.worldToMapEnforceBounds(maxx_, maxy_, xn, yn);
+
+  // gettimeofday(&end, NULL);
+  // start_t = start_e.tv_sec + double(start_e.tv_usec) / 1e6;
+  // end_t = end.tv_sec + double(end.tv_usec) / 1e6;
+  // t_diff = end_t - start_t;
+  // ROS_INFO("%s-layers: update bound cycle time: %.9f", name.c_str(), t_diff);
+  // gettimeofday(&start_e, NULL);
 
   x0 = std::max(0, x0);
   xn = std::min(int(costmap_.getSizeInCellsX()), xn + 1);
@@ -124,18 +135,18 @@ void LayeredCostmap::updateMap(double robot_x, double robot_y, double robot_yaw)
     // Clear and update costmap under a single lock
     boost::unique_lock<Costmap2D::mutex_t> lock(*(costmap_.getMutex()));
     costmap_.resetMap(x0, y0, xn, yn);
-    // gettimeofday(&start, NULL);
     for (vector<boost::shared_ptr<Layer> >::iterator plugin = plugins_.begin(); plugin != plugins_.end();
         ++plugin)
     {
       (*plugin)->updateCosts(costmap_, x0, y0, xn, yn);
     }
-    // gettimeofday(&end, NULL);
-    // start_t = start.tv_sec + double(start.tv_usec) / 1e6;
-    // end_t = end.tv_sec + double(end.tv_usec) / 1e6;
-    // t_diff = end_t - start_t;
-    // ROS_DEBUG("update costs cycle time: %.9f", t_diff);
   }
+
+  // gettimeofday(&end, NULL);
+  // start_t = start_e.tv_sec + double(start_e.tv_usec) / 1e6;
+  // end_t = end.tv_sec + double(end.tv_usec) / 1e6;
+  // t_diff = end_t - start_t;
+  // ROS_INFO("%s-layers: update costs cycle time: %.9f", name.c_str(), t_diff);
 
   bx0_ = x0;
   bxn_ = xn;
@@ -143,6 +154,12 @@ void LayeredCostmap::updateMap(double robot_x, double robot_y, double robot_yaw)
   byn_ = yn;
 
   initialized_ = true;
+
+  // gettimeofday(&end, NULL);
+  // start_t = start.tv_sec + double(start.tv_usec) / 1e6;
+  // end_t = end.tv_sec + double(end.tv_usec) / 1e6;
+  // t_diff = end_t - start_t;
+  // ROS_INFO("%s-layers: total update map time: %.9f", name.c_str(), t_diff);
 }
 
 bool LayeredCostmap::isCurrent()
