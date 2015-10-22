@@ -728,6 +728,7 @@ namespace move_base {
         if(as_->isNewGoalAvailable()){
           //if we're active and a new goal is available, we'll accept it, but we won't shut anything down
           move_base_msgs::MoveBaseGoal new_goal = *as_->acceptNewGoal();
+          replanning_ = false;
 
           if(!isQuaternionValid(new_goal.target_pose.pose.orientation)){
             as_->setAborted(move_base_msgs::MoveBaseResult(), "Aborting on goal because it was sent with an invalid quaternion");
@@ -924,7 +925,11 @@ namespace move_base {
           planner_cond_.notify_one();
         }
         ROS_DEBUG_NAMED("move_base","Waiting for plan, in the planning state.");
-        break;
+        if(!replanning_)
+        {
+            replanning_ = true;
+            break;
+        }
 
       //if we're controlling, we'll attempt to find valid velocity commands
       case CONTROLLING:
@@ -1026,7 +1031,7 @@ namespace move_base {
 
           //we'll check if the recovery behavior actually worked
           ROS_DEBUG_NAMED("move_base_recovery","Going back to planning state");
-          state_ = PLANNING;
+          state_ = CONTROLLING;
 
           //update the index of the next recovery behavior that we'll try
           recovery_index_++;
