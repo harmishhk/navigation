@@ -386,17 +386,19 @@ void Costmap2DROS::mapUpdateLoop(double frequency)
   ros::Rate r(frequency);
   while (nh.ok() && !map_update_thread_shutdown_)
   {
-    struct timeval start, end;
-    double start_t, end_t, t_diff;
+    struct timeval start, start_publish, end;
+    double start_t, start_publish_t, end_t, t_diff;
     gettimeofday(&start, NULL);
 
     updateMap();
 
-    gettimeofday(&end, NULL);
-    start_t = start.tv_sec + double(start.tv_usec) / 1e6;
-    end_t = end.tv_sec + double(end.tv_usec) / 1e6;
-    t_diff = end_t - start_t;
-    ROS_DEBUG("Map update time: %.9f", t_diff);
+    // gettimeofday(&end, NULL);
+    // start_t = start.tv_sec + double(start.tv_usec) / 1e6;
+    // end_t = end.tv_sec + double(end.tv_usec) / 1e6;
+    // t_diff = end_t - start_t;
+    // ROS_INFO("%s: update time: %.9f", name_.c_str(), t_diff);
+
+    gettimeofday(&start_publish, NULL);
     if (publish_cycle.toSec() > 0 && layered_costmap_->isInitialized())
     {
       unsigned int x0, y0, xn, yn;
@@ -410,6 +412,15 @@ void Costmap2DROS::mapUpdateLoop(double frequency)
         last_publish_ = now;
       }
     }
+
+    // gettimeofday(&end, NULL);
+    // start_publish_t = start_publish.tv_sec + double(start_publish.tv_usec) / 1e6;
+    // end_t = end.tv_sec + double(end.tv_usec) / 1e6;
+    // t_diff = end_t - start_publish_t;
+    // ROS_INFO("%s: publish time: %.9f", name_.c_str(), t_diff);
+    // t_diff = end_t - start_t;
+    // ROS_INFO("total %s update and publish time: %.9f", name_.c_str(), t_diff);
+
     r.sleep();
     // make sure to sleep for the remainder of our cycle time
     if (r.cycleTime() > ros::Duration(1 / frequency))
@@ -420,14 +431,33 @@ void Costmap2DROS::mapUpdateLoop(double frequency)
 
 void Costmap2DROS::updateMap()
 {
+    // struct timeval start, start_l, start_f, end;
+    // double start_t, end_t, t_diff;
+
   if (!stop_updates_)
   {
+    // gettimeofday(&start, NULL);
+
     // get global pose
     tf::Stamped < tf::Pose > origin_pose, robot_pose;
     if (getOriginPose (origin_pose) && getRobotPose (robot_pose))
     {
+    //   gettimeofday(&end, NULL);
+    //   start_t = start.tv_sec + double(start.tv_usec) / 1e6;
+    //   end_t = end.tv_sec + double(end.tv_usec) / 1e6;
+    //   t_diff = end_t - start_t;
+    //   ROS_INFO("%s-updatemap: pose getting time: %.9f", name_.c_str(), t_diff);
+    //   gettimeofday(&start_l, NULL);
+
       layered_costmap_->updateMap(origin_pose.getOrigin().x(),
-        origin_pose.getOrigin().y(), tf::getYaw(origin_pose.getRotation()));
+        origin_pose.getOrigin().y(), tf::getYaw(origin_pose.getRotation()), name_);
+
+    //   gettimeofday(&end, NULL);
+    //   start_t = start_l.tv_sec + double(start_l.tv_usec) / 1e6;
+    //   end_t = end.tv_sec + double(end.tv_usec) / 1e6;
+    //   t_diff = end_t - start_t;
+    //   ROS_INFO("%s-updatemap: layer update time: %.9f", name_.c_str(), t_diff);
+    //   gettimeofday(&start_f, NULL);
 
       geometry_msgs::PolygonStamped footprint;
       footprint.header.frame_id = global_frame_;
@@ -436,7 +466,19 @@ void Costmap2DROS::updateMap()
         tf::getYaw(robot_pose.getRotation()), padded_footprint_, footprint);
       footprint_pub_.publish(footprint);
 
+    //   gettimeofday(&end, NULL);
+    //   start_t = start_f.tv_sec + double(start_f.tv_usec) / 1e6;
+    //   end_t = end.tv_sec + double(end.tv_usec) / 1e6;
+    //   t_diff = end_t - start_t;
+    //   ROS_INFO("%s-updatemap: footprint update time: %.9f", name_.c_str(), t_diff);
+
       initialized_ = true;
+
+    //   gettimeofday(&end, NULL);
+    //   start_t = start.tv_sec + double(start.tv_usec) / 1e6;
+    //   end_t = end.tv_sec + double(end.tv_usec) / 1e6;
+    //   t_diff = end_t - start_t;
+    //   ROS_INFO("%s-updatemap: total update map time: %.9f", name_.c_str(), t_diff);
     }
   }
 }
