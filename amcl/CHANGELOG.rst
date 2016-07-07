@@ -2,6 +2,33 @@
 Changelog for package amcl
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.12.12 (2016-06-24)
+--------------------
+
+1.12.11 (2016-06-08)
+--------------------
+
+1.12.10 (2016-05-27)
+--------------------
+
+1.12.9 (2016-05-26)
+-------------------
+
+1.12.8 (2016-05-16)
+-------------------
+* Allow AMCL to run from bag file to allow very fast testing.
+* Fixes interpretation of a delayed initialpose message
+* Contributors: Derek King, Michael Ferguson, Stephan Wirth
+
+1.12.7 (2016-01-05)
+-------------------
+
+1.12.6 (2016-01-02)
+-------------------
+
+1.12.5 (2015-10-29)
+-------------------
+
 1.12.4 (2015-06-03)
 -------------------
 * add the set_map service to amcl

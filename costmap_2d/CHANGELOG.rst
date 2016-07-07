@@ -2,6 +2,65 @@
 Changelog for package costmap_2d
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.12.12 (2016-06-24)
+--------------------
+* Fixed sign error in inflation layer
+* Adds warning when a layer shrinks the bounds
+* Contributors: Alex Henning
+
+1.12.11 (2016-06-08)
+--------------------
+* Fixed bug with inflation layer that caused underinflation
+  When marking before adding to the priority queue, it was possible to
+  underestimate the cost of a cell. This is both dangerous and can lead to
+  unintended side-effects with navigation.
+* Fixed bug with artifacts when not current
+  This is due to not getting clearing observations if the marking
+  observations aren't current.
+* Fix bug with inflation artifacts being left behind
+* Contributors: Alex Henning
+
+1.12.10 (2016-05-27)
+--------------------
+* Fixes issue with costmaps shearing
+* Contributors: Alex Henning
+
+1.12.9 (2016-05-26)
+-------------------
+* Made costmap publishing truly lazy
+* Contributors: Alex Henning
+
+1.12.8 (2016-05-16)
+-------------------
+* fix resource locations to fix tests
+* Fix bug with resetting static layer
+* Made update map threadsafe
+* Reordered initializer list to match order of declarations.
+* Parametrize movementCB timer's period
+* No more ghosts in the inflation layer
+* Contributors: Alex Henning, Daniel Stonier, Michael Ferguson, Spyros Maniatopoulos
+
+1.12.7 (2016-01-05)
+-------------------
+* Fix inflation layer locking
+* Contributors: Levon Avagyan
+
+1.12.6 (2016-01-02)
+-------------------
+* Fix deadlock when using multiple static layers in a single program.
+* Contributors: Alex Henning
+
+1.12.5 (2015-10-29)
+-------------------
+* Remove canTransform spam.
+* Fix for `#382 <https://github.com/ros-planning/navigation/issues/382>`_
+* Republish costmap if origin changes
+* Remove extra sign definition and use proper one when padding footprint
+* Remove Footprint Layer
+* fix plugin warnings on throw, closes `#205 <https://github.com/ros-planning/navigation/issues/205>`_
+* initialize publisher variables
+* Contributors: Daniel Stonier, David Lu, Michael Ferguson
+
 1.12.4 (2015-06-03)
 -------------------
 * Look for robot_radius when footprint is not set. `#206 <https://github.com/mikeferguson/navigation/issues/206>`_
