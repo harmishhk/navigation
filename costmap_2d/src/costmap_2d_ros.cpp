@@ -74,7 +74,7 @@ Costmap2DROS::Costmap2DROS(std::string name, tf::TransformListener& tf) :
   // get frames
   private_nh.param("global_frame", global_frame_, std::string("/map"));
   private_nh.param("robot_base_frame", robot_base_frame_, std::string("base_link"));
-  private_nh.param("origin_frame", origin_frame_, std::string("base_link"));
+  private_nh.param("origin_frame", origin_frame_, robot_base_frame_);
 
   // make sure that we set the frames appropriately based on the tf_prefix
   global_frame_ = tf::resolve(tf_prefix, global_frame_);
