@@ -78,6 +78,10 @@ void LayeredCostmap::resizeMap(unsigned int size_x, unsigned int size_y, double 
 
 void LayeredCostmap::updateMap(double robot_x, double robot_y, double robot_yaw, std::string name)
 {
+  // Lock for the remainder of this function, some plugins (e.g. VoxelLayer)
+  // implement thread unsafe updateBounds() functions.
+  boost::unique_lock<Costmap2D::mutex_t> lock(*(costmap_.getMutex()));
+
   // struct timeval start, start_e, end;
   // double start_t, end_t, t_diff;
   // gettimeofday(&start, NULL);
@@ -101,10 +105,6 @@ void LayeredCostmap::updateMap(double robot_x, double robot_y, double robot_yaw,
 
   minx_ = miny_ = 1e30;
   maxx_ = maxy_ = -1e30;
-
-  // Lock for the remainder of this function, some plugins (e.g. VoxelLayer)
-  // implement thread unsafe updateBounds() functions.
-  boost::unique_lock<Costmap2D::mutex_t> lock(*(costmap_.getMutex()));
 
   // gettimeofday(&start_e, NULL);
 
